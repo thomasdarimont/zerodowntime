@@ -2,52 +2,36 @@ package com.exoscale.boot.zerodowntime
 
 import javax.persistence.*
 import javax.persistence.GenerationType.IDENTITY
-import org.springframework.stereotype.Component
-import org.hibernate.event.service.spi.EventListenerRegistry
-import org.hibernate.event.spi.*
-import org.hibernate.internal.SessionFactoryImpl
-import org.hibernate.persister.entity.EntityPersister
 
 @Entity
 class Person(@Id @GeneratedValue(strategy = IDENTITY) var id: Long = -1,
-             val name: String = "",
-             val addressLine1: String = "",
-             val addressLine2: String? = null,
-             val city: String = "",
-             val zipCode: String = "")
+             val name: String = "") {
 
-@Entity
-class Address(@Id @GeneratedValue(strategy = IDENTITY) var id: Long = -1,
-              val addressLine1: String,
-              val addressLine2: String? = null,
-              val city: String,
-              val zipCode: String,
-              var personId: Long? = null)
-
-val Person.address: Address
-    get() = Address(addressLine1 = addressLine1,
-        addressLine2 = addressLine2,
-        city = city,
-        zipCode = zipCode,
-        personId = id)
-
-@Component
-class WriteAddressListener(emf: EntityManagerFactory) : PostInsertEventListener {
-
-    private val sessionFactory = emf.unwrap(SessionFactoryImpl::class.java)
+    @OneToOne(mappedBy = "person", cascade = [CascadeType.ALL])
+    @JoinColumn(name = "id")
+    val address: Address = Address()
 
     init {
-        val registry = sessionFactory.serviceRegistry.getService(EventListenerRegistry::class.java)
-        registry.getEventListenerGroup(EventType.POST_INSERT).appendListener(this)
+        address.person = this
     }
 
-    override fun onPostInsert(event: PostInsertEvent) {
-        val entity = event.entity
-        if (entity is Person) {
-            val session = sessionFactory.openSession()
-            session.save(entity.address)
-        }
-    }
+    val addressLine1: String
+        get() = address.addressLine1
+    val addressLine2: String?
+        get() = address.addressLine2
+    val city: String
+        get() = address.city
+    val zipCode: String
+        get() = address.zipCode
+}
 
-    override fun requiresPostCommitHanding(persister: EntityPersister) = false
+@Entity
+class Address(@Id @GeneratedValue(strategy = IDENTITY) var id: Long? = null,
+              var addressLine1: String = "",
+              var addressLine2: String? = null,
+              var city: String = "",
+              var zipCode: String = "") {
+    @OneToOne
+    @JoinColumn(name = "person_id")
+    lateinit var person: Person
 }
