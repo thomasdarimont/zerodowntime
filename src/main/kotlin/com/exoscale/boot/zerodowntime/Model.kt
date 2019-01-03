@@ -14,15 +14,6 @@ class Person(@Id @GeneratedValue(strategy = IDENTITY) var id: Long = -1,
     init {
         address.person = this
     }
-
-    val addressLine1: String
-        get() = address.addressLine1
-    val addressLine2: String?
-        get() = address.addressLine2
-    val city: String
-        get() = address.city
-    val zipCode: String
-        get() = address.zipCode
 }
 
 @Entity
